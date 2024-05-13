@@ -12,11 +12,63 @@
                 {% csrf_token %}
                 <div>
                     <label for="video_url" class="block text-gray-700 font-medium mb-2">YouTube Video URL:</label>
-                    <input type="url" id="video_url" name="video_url" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-teal-500" required>
+                    <input id="video-url" type="url" id="video_url" name="video_url" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-teal-500" required>
                 </div>
-                <button type="submit" class="w-full py-3 rounded-xl text-white bg-teal-600 hover:bg-teal-700 focus:outline-none">Like</button>
+                <button id="submit-button" placeholder="Enter YouTube Video URL" type="submit" class="w-full py-3 rounded-xl text-white bg-teal-600 hover:bg-teal-700 focus:outline-none">Like</button><!-- HTML with input field for the YouTube video URL -->
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+        // Function to extract the video ID from the YouTube URL
+        function extractVideoId(videoUrl) {
+        const match = videoUrl.match(/[?&]v=([a-zA-Z0-9_-]+)/);
+        return match ? match[1] : null;
+    }
+// JavaScript code for sending JSON data to the LikeConsumer
+
+    // Function to handle form submission
+    function handleSubmit(event) {
+        event.preventDefault();
+
+        // Retrieve the YouTube video URL from the input field
+        const videoUrlInput = document.getElementById('video-url');
+        const videoUrl = videoUrlInput.value;
+
+        // Extract the video ID from the YouTube URL
+        const videoId = extractVideoId(videoUrl);
+
+        if (videoId) {
+            // Establish the WebSocket connection with the retrieved video ID
+            const chatSocket = new WebSocket(
+                'ws://' + window.location.host + '/ws/like/' + videoId + '/'
+            );
+
+            // Handle WebSocket events as needed
+            // For example:
+            chatSocket.onopen = function(event) {
+                console.log('WebSocket connection opened.');
+
+                chatSocket.send(JSON.stringify({
+                    video_id: videoId
+                }));
+                // Clear the input field if desired
+                videoId.value = '';
+            };
+
+            chatSocket.onclose = function(event) {
+                console.log('WebSocket connection closed.');
+            };
+        } else {
+            // Handle invalid YouTube video URL
+            console.error('Invalid YouTube video URL:', videoUrl);
+        }
+    }
+
+    // Add event listener for form submission
+    const submitButton = document.getElementById('submit-button');
+    submitButton.addEventListener('click', handleSubmit);
+</script>
 {% endblock %}
